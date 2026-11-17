@@ -80,6 +80,8 @@
     peng: { t: "PENG block", f: "peng" },
     sc:   { t: "Supraclavicular block", f: "supraclavicular" },
     cc:   { t: "Costoclavicular block", f: "costoclavicular" },
+    ac:   { t: "Adductor canal block", f: "adductor-canal" },
+    ipack: { t: "IPACK block", f: "ipack" },
     st:   { t: "Superior trunk block", f: "superior-trunk" },
     ax:   { t: "Axillary block", f: "axillary" },
     esp:  { t: "Erector spinae plane block", f: "esp" },
@@ -95,9 +97,9 @@
     { n: "Upper abdomen, flank and lower back", v: [["ql", "Abdominal wall and flank, about T7 to L1"], ["esp", "A lower thoracic injection reaches the upper abdomen"]] },
     { n: "Lower abdomen", v: [["tap", "Front of the abdominal wall, about T10 to L1"], ["ql", "Abdominal wall and flank, about T7 to L1"]] },
     { n: "Hip and groin", v: [["peng", "Front of the hip joint, keeps quadriceps strength"], ["fib", "Hip, front and side of the thigh"]] },
-    { n: "Front of the thigh and knee", v: [["sf", "Femoral part: front of the thigh and knee"], ["fib", "Hip, front and side of the thigh"]] },
-    { n: "Back of the thigh", v: [["sf", "Sciatic part: back of the thigh and knee"]] },
-    { n: "Lower leg, ankle and foot", v: [["sf", "Sciatic for most of it, femoral for the inner strip"]] }
+    { n: "Front of the thigh and knee", v: [["sf", "Femoral part: front of the thigh and knee"], ["fib", "Hip, front and side of the thigh"], ["ac", "Inner knee and inner leg, keeps quadriceps strength"], ["ipack", "Back of the knee joint, pairs with adductor canal"]] },
+    { n: "Back of the thigh", v: [["sf", "Sciatic part: back of the thigh and knee"], ["ipack", "Back of the knee joint, no foot weakness"]] },
+    { n: "Lower leg, ankle and foot", v: [["sf", "Sciatic for most of it, femoral for the inner strip"], ["ac", "Inner strip of the leg, through the saphenous nerve"]] }
   ];
   const $ = id => document.getElementById(id);
   const btn = (k, why) => { const b = document.createElement("button"); b.className = "v"; b.innerHTML = `<span>${V[k].t}${why ? `<span class="why">${why}</span>` : ""}</span><span class="go">Play ▶</span>`; b.onclick = () => play(k); return b; };
