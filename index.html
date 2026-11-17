@@ -52,7 +52,7 @@
 <body>
 <div id="stage"><canvas id="c"></canvas></div>
 <header><img src="bodymap/badge.png" alt="RA Squad badge"><div><div class="eyebrow">RA Squad · Regional anaesthesia teaching videos</div><h1>Which block covers this area?</h1></div></header>
-<div class="hint"><b>Hover</b> over the body to see which blocks cover that area. <b>Click</b> to open the teaching video. <b>Drag</b> to turn the body, <b>scroll</b> to zoom. In a video, <b>Esc</b> or <b>Back</b> returns here.</div>
+<div class="hint"><b>Hover</b> over the body to see which blocks cover that area. <b>Click</b> an area to select it, then press <b>Play</b> on the right to open its teaching video. <b>Drag</b> to turn the body, <b>scroll</b> to zoom. In a video, <b>Esc</b> or <b>Back</b> returns here.</div>
 <aside>
   <div class="card">
     <h2>Area</h2>
@@ -167,7 +167,6 @@
   canvas.addEventListener("pointerup", e => {
     const was = drag; drag = null; if (!was || moved > 5) return;
     const h = pick(e); pinned = h; hot = h; paint(); panel();
-    if (h && R[h].v.length === 1) play(R[h].v[0][0]);          // one block for this area: go straight to its video
   });
   canvas.addEventListener("pointerleave", () => { if (hot) { hot = 0; paint(); panel(); } $("tip").style.display = "none"; });
   canvas.addEventListener("wheel", e => { e.preventDefault(); dist = Math.min(7, Math.max(1.6, dist * (e.deltaY > 0 ? 1.08 : 0.93))); }, { passive: false });
