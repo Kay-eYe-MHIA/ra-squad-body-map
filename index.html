@@ -61,7 +61,7 @@
   </div>
   <div class="card" id="all"><h2>All teaching videos</h2><div id="alllist" class="list" style="margin-top:10px"></div></div>
 </aside>
-<div class="credit">For teaching only, not a substitute for supervised training. Body model: BodyParts3D, © The Database Center for Life Science, CC BY-SA 2.1 Japan. 3D engine: three.js (MIT).</div>
+<div class="credit">For teaching only, not a substitute for supervised training. Body model: MakeHuman base mesh (CC0). 3D engine: three.js (MIT).</div>
 <div id="tip"></div>
 <div id="player">
   <div id="bar"><button id="back">← Back to body map</button><span id="ptitle"></span><span class="esc">Esc to go back</span></div>
@@ -127,35 +127,42 @@
   const pos = dec(BODY.pos, Float32Array), idx = dec(BODY.idx, Uint32Array), reg = dec(BODY.reg, Uint8Array);
   const canvas = $("c"), renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(0x0d1117);
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x38414d, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 0.55); dl.position.set(1.5, 2, 3); scene.add(dl);
-  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeVertexNormals();
-  const col = new Float32Array(pos.length); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0 })); const holder = new THREE.Group(); holder.add(body); scene.add(holder);
-  const SKIN = [0.87, 0.70, 0.60], DIM = [0.62, 0.53, 0.48], HOT = [0.22, 0.77, 0.73];
+  scene.add(new THREE.HemisphereLight(0xfff4ea, 0x2c333d, 0.8)); const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(1.5, 2, 3); scene.add(dl); const rl = new THREE.DirectionalLight(0x9fc4ff, 0.35); rl.position.set(-2, 1, -3); scene.add(rl);
+  const g0 = new THREE.BufferGeometry(); g0.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g0.setIndex(new THREE.BufferAttribute(idx, 1)); g0.computeVertexNormals();
+  const geo = g0.toNonIndexed(), nF = idx.length / 3, freg = new Uint8Array(nF), fkind = dec(BODY.fkind, Uint8Array);      // one flat colour per triangle keeps edges crisp
+  const maj = (a, b, c) => (a === b || a === c) ? a : (b === c ? b : a);
+  for (let t = 0; t < nF; t++) { const a = idx[3 * t], b = idx[3 * t + 1], c = idx[3 * t + 2]; freg[t] = maj(reg[a], reg[b], reg[c]); }
+  const col = new Float32Array(nF * 9); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0 })); const holder = new THREE.Group(); holder.add(body); scene.add(holder);
+  const SKIN = [0.86, 0.66, 0.55], DIM = [0.62, 0.53, 0.48], HOT = [0.22, 0.77, 0.73];
   let hot = 0, pinned = 0;
-  const SHORTS = [0.24, 0.30, 0.38], SHORTS_DIM = [0.19, 0.23, 0.29], inShorts = i => reg[i] >= 5 && reg[i] <= 9 && pos[3 * i + 1] > -0.2 && pos[3 * i + 1] < 0.075;
-  function paint() { const h = hot || pinned; for (let i = 0; i < reg.length; i++) { const sh = inShorts(i), c = h ? (reg[i] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; col[3 * i] = c[0]; col[3 * i + 1] = c[1]; col[3 * i + 2] = c[2]; } geo.attributes.color.needsUpdate = true; }
+  const SHORTS = [0.24, 0.30, 0.38], SHORTS_DIM = [0.19, 0.23, 0.29], EYE = [0.16, 0.13, 0.12];
+  function paint() { const h = hot || pinned; for (let t = 0; t < nF; t++) { const k = fkind[t], sh = k === 1, c = k === 2 ? EYE : h ? (freg[t] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; for (let q = 0; q < 3; q++) { const o = 9 * t + 3 * q; col[o] = c[0]; col[o + 1] = c[1]; col[o + 2] = c[2]; } } geo.attributes.color.needsUpdate = true; }
   function panel() {
     const h = hot || pinned, el = $("region"), s = $("sug"); s.innerHTML = "";
     if (!h) { el.textContent = "Point at the body"; el.className = "none"; return; }
     el.textContent = R[h].n; el.className = ""; R[h].v.forEach(([k, why]) => s.appendChild(btn(k, why)));
   }
   paint();
-  let yaw = 0.35, dist = 3.7, drag = null, moved = 0;
+  let yaw = 0.3, dist = 3.9, drag = null, moved = 0;
   function size() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.setViewOffset(w, h, 70, 0, w, h); cam.updateProjectionMatrix(); }
   addEventListener("resize", size); size();
   const ray = new THREE.Raycaster(), m2 = new THREE.Vector2();
   function pick(e) {
     const r = canvas.getBoundingClientRect(); m2.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height * 2 - 1)); ray.setFromCamera(m2, cam);
     const hit = ray.intersectObject(body, false)[0]; if (!hit) return 0;
-    const f = hit.face, c = [reg[f.a], reg[f.b], reg[f.c]]; return c[0] === c[1] || c[0] === c[2] ? c[0] : c[1];
+    const rg = freg[hit.faceIndex]; return R[rg] ? rg : 0;
+  }
+  let pend = null;
+  function hover(e) {
+    const h = pick(e); if (h !== hot) { hot = h; paint(); panel(); }
+    canvas.classList.toggle("hot", !!h); const tip = $("tip");
+    if (h) { tip.innerHTML = `<b>${R[h].n}</b><span>${R[h].v.map(a => V[a[0]].t).join(" · ")}</span>`; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 16, innerWidth - 320) + "px"; tip.style.top = (e.clientY + 18) + "px"; } else tip.style.display = "none";
   }
   canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, yaw }; moved = 0; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener("pointermove", e => {
     if (drag) { const dx = e.clientX - drag.x; moved = Math.max(moved, Math.abs(dx)); yaw = drag.yaw + dx * 0.008; return; }
-    const h = pick(e); if (h !== hot) { hot = h; paint(); panel(); }
-    canvas.classList.toggle("hot", !!h); const tip = $("tip");
-    if (h) { tip.innerHTML = `<b>${R[h].n}</b><span>${R[h].v.map(a => V[a[0]].t).join(" · ")}</span>`; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 16, innerWidth - 320) + "px"; tip.style.top = (e.clientY + 18) + "px"; } else tip.style.display = "none";
+    pend = e;
   });
   canvas.addEventListener("pointerup", e => {
     const was = drag; drag = null; if (!was || moved > 5) return;
@@ -164,7 +171,7 @@
   });
   canvas.addEventListener("pointerleave", () => { if (hot) { hot = 0; paint(); panel(); } $("tip").style.display = "none"; });
   canvas.addEventListener("wheel", e => { e.preventDefault(); dist = Math.min(7, Math.max(1.6, dist * (e.deltaY > 0 ? 1.08 : 0.93))); }, { passive: false });
-  (function loop() { holder.rotation.y = yaw; cam.position.set(0, 0.05, dist); cam.lookAt(0, -0.03, 0); renderer.render(scene, cam); requestAnimationFrame(loop); })();
+  (function loop() { if (pend && !drag) { const e = pend; pend = null; hover(e); } holder.rotation.y = yaw; cam.position.set(0, 0.05, dist); cam.lookAt(0, -0.03, 0); renderer.render(scene, cam); requestAnimationFrame(loop); })();
   if (location.hash && V[location.hash.slice(1)]) { try { history.replaceState(null, "", location.pathname); } catch (e) {} }
 })();
 </script>

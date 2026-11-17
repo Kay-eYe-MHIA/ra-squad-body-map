@@ -6,5 +6,5 @@ For teaching only. It is not a substitute for supervised training.
 
 ## Credits
 
-- Body model: BodyParts3D, © The Database Center for Life Science, licensed under CC BY-SA 2.1 Japan.
+- Body model: MakeHuman base mesh (CC0 1.0).
 - 3D engine: three.js (MIT licence).
