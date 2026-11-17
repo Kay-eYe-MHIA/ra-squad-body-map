@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RA Squad body map</title>
+<style>
+  :root { --bg:#0d1117; --panel:#151b23; --line:#2a323d; --ink:#e6edf3; --soft:#9aa7b4; --amber:#f0b54a; --teal:#39c5bb; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: "Segoe UI", Inter, Arial, sans-serif; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.hot { cursor: pointer; }
+  header { position: fixed; left: 28px; top: 22px; display: flex; gap: 16px; align-items: center; pointer-events: none; }
+  header img { width: 76px; height: 76px; }
+  header .eyebrow { color: var(--amber); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  header h1 { margin: 2px 0 0; font-size: 30px; font-weight: 700; }
+  .hint { position: fixed; left: 28px; bottom: 22px; color: var(--soft); font-size: 14px; line-height: 1.6; max-width: 360px; }
+  .hint b { color: var(--ink); font-weight: 600; }
+  aside { position: fixed; right: 28px; top: 22px; bottom: 22px; width: 340px; display: flex; flex-direction: column; gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .card h2 { margin: 0 0 4px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); }
+  #region { font-size: 22px; font-weight: 700; margin: 2px 0 10px; min-height: 28px; }
+  #region.none { color: var(--soft); font-weight: 400; font-size: 16px; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  button.v { all: unset; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; }
+  button.v:hover, button.v:focus-visible { border-color: var(--teal); background: #1b2530; }
+  button.v .why { color: var(--soft); font-size: 12.5px; display: block; margin-top: 2px; }
+  button.v .go { color: var(--teal); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  #all { overflow: auto; flex: 1; min-height: 0; }
+  #all button.v { padding: 8px 12px; font-size: 14px; }
+  .toggle { display: flex; gap: 8px; align-items: center; color: var(--soft); font-size: 13px; margin-top: 12px; }
+  .toggle input { accent-color: var(--teal); width: 16px; height: 16px; }
+  .credit { position: fixed; left: 28px; bottom: 6px; color: #6f7b88; font-size: 11px; }
+  .hint { bottom: 34px !important; }
+  #tip { position: fixed; pointer-events: none; background: #0b0f14ee; border: 1px solid var(--teal); border-radius: 8px; padding: 8px 12px; font-size: 14px; display: none; max-width: 300px; }
+  #tip b { display: block; font-size: 15px; margin-bottom: 2px; }
+  #tip span { color: var(--soft); }
+  #player { position: fixed; inset: 0; background: #000; display: none; flex-direction: column; z-index: 10; }
+  #player.on { display: flex; }
+  #bar { display: flex; align-items: center; gap: 16px; padding: 10px 18px; background: #0d1117; border-bottom: 1px solid var(--line); }
+  #bar button { all: unset; cursor: pointer; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-weight: 600; }
+  #bar button:hover, #bar button:focus-visible { border-color: var(--teal); color: var(--teal); }
+  #ptitle { font-size: 16px; font-weight: 600; }
+  #bar .esc { margin-left: auto; color: var(--soft); font-size: 13px; }
+  video { flex: 1; min-height: 0; width: 100%; background: #000; }
+  #err { display: none; padding: 30px; color: var(--amber); font-size: 16px; line-height: 1.6; }
+  #done { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); display: none; }
+  #done button { all: unset; cursor: pointer; background: var(--teal); color: #06201e; font-weight: 700; font-size: 18px; padding: 16px 26px; border-radius: 10px; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<header><img src="bodymap/badge.png" alt="RA Squad badge"><div><div class="eyebrow">RA Squad · Regional anaesthesia teaching videos</div><h1>Which block covers this area?</h1></div></header>
+<div class="hint"><b>Hover</b> over the body to see which blocks cover that area. <b>Click</b> to open the teaching video. <b>Drag</b> to turn the body, <b>scroll</b> to zoom. In a video, <b>Esc</b> or <b>Back</b> returns here.</div>
+<aside>
+  <div class="card">
+    <h2>Area</h2>
+    <div id="region" class="none">Point at the body</div>
+    <div id="sug" class="list"></div>
+  </div>
+  <div class="card" id="all"><h2>All teaching videos</h2><div id="alllist" class="list" style="margin-top:10px"></div></div>
+</aside>
+<div class="credit">For teaching only, not a substitute for supervised training. Body model: BodyParts3D, © The Database Center for Life Science, CC BY-SA 2.1 Japan. 3D engine: three.js (MIT).</div>
+<div id="tip"></div>
+<div id="player">
+  <div id="bar"><button id="back">← Back to body map</button><span id="ptitle"></span><span class="esc">Esc to go back</span></div>
+  <video id="vid" controls playsinline></video>
+  <div id="err"></div>
+  <div id="done"><button id="back2">← Back to body map</button></div>
+</div>
+<script src="bodymap/three.min.js"></script>
+<script src="bodymap/body.js"></script>
+<script>
+(() => {
+  // ---- teaching videos (files sit in the same folder as this page) ----
+  const V = {
+    sf:   { t: "Sciatic and femoral block", f: "sciatic-femoral" },
+    fib:  { t: "Suprainguinal fascia iliaca block", f: "fascia-iliaca" },
+    peng: { t: "PENG block", f: "peng" },
+    sc:   { t: "Supraclavicular block", f: "supraclavicular" },
+    st:   { t: "Superior trunk block", f: "superior-trunk" },
+    ax:   { t: "Axillary block", f: "axillary" },
+    esp:  { t: "Erector spinae plane block", f: "esp" },
+    ql:   { t: "Quadratus lumborum block", f: "quadratus-lumborum" },
+    tap:  { t: "TAP block", f: "tap" }
+  };
+  // ---- areas of the body and the blocks that cover them ----
+  const R = [null,
+    { n: "Shoulder", v: [["st", "Shoulder joint and outer upper arm"]] },
+    { n: "Upper arm", v: [["sc", "Whole arm below the shoulder"]] },
+    { n: "Elbow, forearm and hand", v: [["ax", "Forearm, wrist and hand"], ["sc", "Whole arm below the shoulder"]] },
+    { n: "Chest wall", v: [["esp", "One side of the chest wall, front and back"]] },
+    { n: "Upper abdomen, flank and lower back", v: [["ql", "Abdominal wall and flank, about T7 to L1"], ["esp", "A lower thoracic injection reaches the upper abdomen"]] },
+    { n: "Lower abdomen", v: [["tap", "Front of the abdominal wall, about T10 to L1"], ["ql", "Abdominal wall and flank, about T7 to L1"]] },
+    { n: "Hip and groin", v: [["peng", "Front of the hip joint, keeps quadriceps strength"], ["fib", "Hip, front and side of the thigh"]] },
+    { n: "Front of the thigh and knee", v: [["sf", "Femoral part: front of the thigh and knee"], ["fib", "Hip, front and side of the thigh"]] },
+    { n: "Back of the thigh", v: [["sf", "Sciatic part: back of the thigh and knee"]] },
+    { n: "Lower leg, ankle and foot", v: [["sf", "Sciatic for most of it, femoral for the inner strip"]] }
+  ];
+  const $ = id => document.getElementById(id);
+  const btn = (k, why) => { const b = document.createElement("button"); b.className = "v"; b.innerHTML = `<span>${V[k].t}${why ? `<span class="why">${why}</span>` : ""}</span><span class="go">Play ▶</span>`; b.onclick = () => play(k); return b; };
+  Object.keys(V).forEach(k => $("alllist").appendChild(btn(k)));
+
+  // ---- player ----
+  const vid = $("vid"); let open = false;
+  function play(k) {
+    const file = `videos/${V[k].f}.mp4`;
+    $("ptitle").textContent = V[k].t; $("err").style.display = "none"; $("done").style.display = "none"; vid.style.display = "block";
+    vid.src = encodeURI(file); $("player").classList.add("on"); open = true; $("tip").style.display = "none";
+    try { history.pushState({ v: k }, "", "#" + k); } catch (e) {}
+    vid.play().catch(() => {});
+  }
+  function close(fromPop) {
+    if (!open) return; open = false; vid.pause(); vid.removeAttribute("src"); vid.load(); $("player").classList.remove("on");
+    if (!fromPop) { try { if (history.state && history.state.v) history.back(); } catch (e) {} }
+  }
+  vid.addEventListener("ended", () => { $("done").style.display = "block"; $("back2").focus(); });
+  vid.addEventListener("play", () => { $("done").style.display = "none"; });
+  vid.addEventListener("error", () => { if (!open) return; vid.style.display = "none"; $("err").style.display = "block"; $("err").textContent = "The video file was not found. Missing file: " + decodeURI(vid.getAttribute("src") || ""); });
+  $("back").onclick = () => close(); $("back2").onclick = () => close();
+  addEventListener("keydown", e => { if (e.key === "Escape" && open) { e.preventDefault(); close(); } });
+  addEventListener("popstate", () => close(true));
+
+  // ---- 3D body ----
+  const dec = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
+  const pos = dec(BODY.pos, Float32Array), idx = dec(BODY.idx, Uint32Array), reg = dec(BODY.reg, Uint8Array);
+  const canvas = $("c"), renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(0x0d1117);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x38414d, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 0.55); dl.position.set(1.5, 2, 3); scene.add(dl);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeVertexNormals();
+  const col = new Float32Array(pos.length); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0 })); const holder = new THREE.Group(); holder.add(body); scene.add(holder);
+  const SKIN = [0.87, 0.70, 0.60], DIM = [0.62, 0.53, 0.48], HOT = [0.22, 0.77, 0.73];
+  let hot = 0, pinned = 0;
+  const SHORTS = [0.24, 0.30, 0.38], SHORTS_DIM = [0.19, 0.23, 0.29], inShorts = i => reg[i] >= 5 && reg[i] <= 9 && pos[3 * i + 1] > -0.2 && pos[3 * i + 1] < 0.075;
+  function paint() { const h = hot || pinned; for (let i = 0; i < reg.length; i++) { const sh = inShorts(i), c = h ? (reg[i] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; col[3 * i] = c[0]; col[3 * i + 1] = c[1]; col[3 * i + 2] = c[2]; } geo.attributes.color.needsUpdate = true; }
+  function panel() {
+    const h = hot || pinned, el = $("region"), s = $("sug"); s.innerHTML = "";
+    if (!h) { el.textContent = "Point at the body"; el.className = "none"; return; }
+    el.textContent = R[h].n; el.className = ""; R[h].v.forEach(([k, why]) => s.appendChild(btn(k, why)));
+  }
+  paint();
+  let yaw = 0.35, dist = 3.7, drag = null, moved = 0;
+  function size() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.setViewOffset(w, h, 70, 0, w, h); cam.updateProjectionMatrix(); }
+  addEventListener("resize", size); size();
+  const ray = new THREE.Raycaster(), m2 = new THREE.Vector2();
+  function pick(e) {
+    const r = canvas.getBoundingClientRect(); m2.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height * 2 - 1)); ray.setFromCamera(m2, cam);
+    const hit = ray.intersectObject(body, false)[0]; if (!hit) return 0;
+    const f = hit.face, c = [reg[f.a], reg[f.b], reg[f.c]]; return c[0] === c[1] || c[0] === c[2] ? c[0] : c[1];
+  }
+  canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, yaw }; moved = 0; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", e => {
+    if (drag) { const dx = e.clientX - drag.x; moved = Math.max(moved, Math.abs(dx)); yaw = drag.yaw + dx * 0.008; return; }
+    const h = pick(e); if (h !== hot) { hot = h; paint(); panel(); }
+    canvas.classList.toggle("hot", !!h); const tip = $("tip");
+    if (h) { tip.innerHTML = `<b>${R[h].n}</b><span>${R[h].v.map(a => V[a[0]].t).join(" · ")}</span>`; tip.style.display = "block"; tip.style.left = Math.min(e.clientX + 16, innerWidth - 320) + "px"; tip.style.top = (e.clientY + 18) + "px"; } else tip.style.display = "none";
+  });
+  canvas.addEventListener("pointerup", e => {
+    const was = drag; drag = null; if (!was || moved > 5) return;
+    const h = pick(e); pinned = h; hot = h; paint(); panel();
+    if (h && R[h].v.length === 1) play(R[h].v[0][0]);          // one block for this area: go straight to its video
+  });
+  canvas.addEventListener("pointerleave", () => { if (hot) { hot = 0; paint(); panel(); } $("tip").style.display = "none"; });
+  canvas.addEventListener("wheel", e => { e.preventDefault(); dist = Math.min(7, Math.max(1.6, dist * (e.deltaY > 0 ? 1.08 : 0.93))); }, { passive: false });
+  (function loop() { holder.rotation.y = yaw; cam.position.set(0, 0.05, dist); cam.lookAt(0, -0.03, 0); renderer.render(scene, cam); requestAnimationFrame(loop); })();
+  if (location.hash && V[location.hash.slice(1)]) { try { history.replaceState(null, "", location.pathname); } catch (e) {} }
+})();
+</script>
+</body>
+</html>
