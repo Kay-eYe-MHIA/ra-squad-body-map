@@ -79,6 +79,7 @@
     fib:  { t: "Suprainguinal fascia iliaca block", f: "fascia-iliaca" },
     peng: { t: "PENG block", f: "peng" },
     sc:   { t: "Supraclavicular block", f: "supraclavicular" },
+    cc:   { t: "Costoclavicular block", f: "costoclavicular" },
     st:   { t: "Superior trunk block", f: "superior-trunk" },
     ax:   { t: "Axillary block", f: "axillary" },
     esp:  { t: "Erector spinae plane block", f: "esp" },
@@ -88,8 +89,8 @@
   // ---- areas of the body and the blocks that cover them ----
   const R = [null,
     { n: "Shoulder", v: [["st", "Shoulder joint and outer upper arm"]] },
-    { n: "Upper arm", v: [["sc", "Whole arm below the shoulder"]] },
-    { n: "Elbow, forearm and hand", v: [["ax", "Forearm, wrist and hand"], ["sc", "Whole arm below the shoulder"]] },
+    { n: "Upper arm", v: [["sc", "Whole arm below the shoulder"], ["cc", "Whole arm below the shoulder, from below the clavicle"]] },
+    { n: "Elbow, forearm and hand", v: [["ax", "Forearm, wrist and hand"], ["sc", "Whole arm below the shoulder"], ["cc", "Whole arm below the shoulder, from below the clavicle"]] },
     { n: "Chest wall", v: [["esp", "One side of the chest wall, front and back"]] },
     { n: "Upper abdomen, flank and lower back", v: [["ql", "Abdominal wall and flank, about T7 to L1"], ["esp", "A lower thoracic injection reaches the upper abdomen"]] },
     { n: "Lower abdomen", v: [["tap", "Front of the abdominal wall, about T10 to L1"], ["ql", "Abdominal wall and flank, about T7 to L1"]] },
