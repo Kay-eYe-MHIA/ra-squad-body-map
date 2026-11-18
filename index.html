@@ -42,7 +42,9 @@
   #bar button { all: unset; cursor: pointer; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-weight: 600; }
   #bar button:hover, #bar button:focus-visible { border-color: var(--teal); color: var(--teal); }
   #ptitle { font-size: 16px; font-weight: 600; }
-  #bar .esc { margin-left: auto; color: var(--soft); font-size: 13px; }
+  #mus { margin-left: auto; font-size: 13px; color: var(--soft); display: flex; align-items: center; gap: 8px; }
+  #mus select { background: #0d1117; color: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font: inherit; color: #e6edf3; }
+  #bar .esc { margin-left: 0; color: var(--soft); font-size: 13px; }
   video { flex: 1; min-height: 0; width: 100%; background: #000; }
   #err { display: none; padding: 30px; color: var(--amber); font-size: 16px; line-height: 1.6; }
   #done { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); display: none; }
@@ -64,8 +66,9 @@
 <div class="credit">For teaching only, not a substitute for supervised training. Body model: MakeHuman base mesh (CC0). 3D engine: three.js (MIT).</div>
 <div id="tip"></div>
 <div id="player">
-  <div id="bar"><button id="back">← Back to body map</button><span id="ptitle"></span><span class="esc">Esc to go back</span></div>
+  <div id="bar"><button id="back">← Back to body map</button><span id="ptitle"></span><label id="mus">Music <select id="track"><option value="mystery">Mysterious</option><option value="happy">Happy</option><option value="soothing">Soothing</option><option value="off">Off</option></select></label><span class="esc">Esc to go back</span></div>
   <video id="vid" controls playsinline></video>
+  <audio id="bgm" loop preload="none"></audio>
   <div id="err"></div>
   <div id="done"><button id="back2">← Back to body map</button></div>
 </div>
@@ -107,6 +110,18 @@
 
   // ---- player ----
   const vid = $("vid"); let open = false;
+  // background music: plays with the video, loops, follows play and pause; the choice is remembered on this device
+  const bgm = $("bgm"), track = $("track"); bgm.volume = 0.55;
+  try { const t0 = localStorage.getItem("ra-music"); if (t0 && [...track.options].some(o => o.value === t0)) track.value = t0; } catch (e) {}
+  function music(on) {
+    if (track.value === "off" || !on) { bgm.pause(); return; }
+    const src = "music/" + track.value + ".mp3";
+    if (!bgm.getAttribute("src") || !bgm.getAttribute("src").endsWith(src)) bgm.src = src;
+    bgm.play().catch(() => {});
+  }
+  track.onchange = () => { try { localStorage.setItem("ra-music", track.value); } catch (e) {} music(open && !vid.paused && !vid.ended); };
+  vid.addEventListener("playing", () => music(true)); vid.addEventListener("pause", () => music(false)); vid.addEventListener("ended", () => music(false));
+  vid.addEventListener("volumechange", () => { bgm.muted = vid.muted; });
   function play(k) {
     const file = `videos/${V[k].f}.mp4`;
     $("ptitle").textContent = V[k].t; $("err").style.display = "none"; $("done").style.display = "none"; vid.style.display = "block";
@@ -115,7 +130,7 @@
     vid.play().catch(() => {});
   }
   function close(fromPop) {
-    if (!open) return; open = false; vid.pause(); vid.removeAttribute("src"); vid.load(); $("player").classList.remove("on");
+    if (!open) return; open = false; vid.pause(); bgm.pause(); bgm.currentTime = 0; vid.removeAttribute("src"); vid.load(); $("player").classList.remove("on");
     if (!fromPop) { try { if (history.state && history.state.v) history.back(); } catch (e) {} }
   }
   vid.addEventListener("ended", () => { $("done").style.display = "block"; $("back2").focus(); });
