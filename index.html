@@ -143,7 +143,7 @@
   // ---- 3D body ----
   const dec = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
   const pos = dec(BODY.pos, Float32Array), idx = dec(BODY.idx, Uint32Array), reg = dec(BODY.reg, Uint8Array);
-  const canvas = $("c"), renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(0x04070d);
+  const canvas = $("c"), renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(0x0d1117);
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 20);
   scene.add(new THREE.HemisphereLight(0xfff4ea, 0x2c333d, 0.8)); const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(1.5, 2, 3); scene.add(dl); const rl = new THREE.DirectionalLight(0x9fc4ff, 0.35); rl.position.set(-2, 1, -3); scene.add(rl);
   const g0 = new THREE.BufferGeometry(); g0.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g0.setIndex(new THREE.BufferAttribute(idx, 1)); g0.computeVertexNormals();
@@ -151,13 +151,11 @@
   const maj = (a, b, c) => (a === b || a === c) ? a : (b === c ? b : a);
   for (let t = 0; t < nF; t++) { const a = idx[3 * t], b = idx[3 * t + 1], c = idx[3 * t + 2]; freg[t] = maj(reg[a], reg[b], reg[c]); }
   const col = new Float32Array(nF * 9); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  const body = new THREE.Mesh(geo, new THREE.ShaderMaterial({ vertexColors: true,
-      vertexShader: "varying vec3 vN; varying vec3 vV; varying vec3 vC; void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }",
-      fragmentShader: "varying vec3 vN; varying vec3 vV; varying vec3 vC; void main(){ vec3 n = normalize(vN); float d = abs(dot(n, normalize(vV))); float rim = pow(1.0 - d, 1.7); float lit = 0.5 + 0.5 * max(dot(n, normalize(vec3(0.3,0.6,0.75))), 0.0); vec3 c = vC * (0.42 + 0.5 * lit * d) + mix(vC, vec3(0.75,0.92,1.0), 0.75) * rim * 1.25; gl_FragColor = vec4(c, 1.0); }" })); const holder = new THREE.Group(); holder.add(body); scene.add(holder);
-  const SKIN = [0.05, 0.42, 1.0], DIM = [0.03, 0.22, 0.6], HOT = [1.0, 0.68, 0.12];      // glowing blue figure, amber highlight
+  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0 })); const holder = new THREE.Group(); holder.add(body); scene.add(holder);
+  const SKIN = [0.86, 0.66, 0.55], DIM = [0.62, 0.53, 0.48], HOT = [0.22, 0.77, 0.73];
   let hot = 0, pinned = 0;
-  const SHORTS = [0.04, 0.30, 0.82], SHORTS_DIM = [0.03, 0.17, 0.5], EYE = SKIN;
-  function paint() { const h = hot || pinned; for (let t = 0; t < nF; t++) { const k = fkind[t], sh = k === 1, c = k === 2 ? (h ? DIM : SKIN) : h ? (freg[t] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; for (let q = 0; q < 3; q++) { const o = 9 * t + 3 * q; col[o] = c[0]; col[o + 1] = c[1]; col[o + 2] = c[2]; } } geo.attributes.color.needsUpdate = true; }
+  const SHORTS = [0.24, 0.30, 0.38], SHORTS_DIM = [0.19, 0.23, 0.29], EYE = [0.16, 0.13, 0.12];
+  function paint() { const h = hot || pinned; for (let t = 0; t < nF; t++) { const k = fkind[t], sh = k === 1, c = k === 2 ? EYE : h ? (freg[t] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; for (let q = 0; q < 3; q++) { const o = 9 * t + 3 * q; col[o] = c[0]; col[o + 1] = c[1]; col[o + 2] = c[2]; } } geo.attributes.color.needsUpdate = true; }
   function panel() {
     const h = hot || pinned, el = $("region"), s = $("sug"); s.innerHTML = "";
     if (!h) { el.textContent = "Point at the body"; el.className = "none"; return; }
