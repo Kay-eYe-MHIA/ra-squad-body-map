@@ -157,7 +157,7 @@
   const SKIN = [0.05, 0.42, 1.0], DIM = [0.03, 0.22, 0.6], HOT = [1.0, 0.68, 0.12];      // glowing blue figure, amber highlight
   let hot = 0, pinned = 0;
   const SHORTS = [0.04, 0.30, 0.82], SHORTS_DIM = [0.03, 0.17, 0.5], EYE = SKIN;
-  function paint() { const h = hot || pinned; for (let t = 0; t < nF; t++) { const k = fkind[t], sh = k === 1, c = k === 2 ? EYE : h ? (freg[t] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; for (let q = 0; q < 3; q++) { const o = 9 * t + 3 * q; col[o] = c[0]; col[o + 1] = c[1]; col[o + 2] = c[2]; } } geo.attributes.color.needsUpdate = true; }
+  function paint() { const h = hot || pinned; for (let t = 0; t < nF; t++) { const k = fkind[t], sh = k === 1, c = k === 2 ? (h ? DIM : SKIN) : h ? (freg[t] === h ? HOT : sh ? SHORTS_DIM : DIM) : sh ? SHORTS : SKIN; for (let q = 0; q < 3; q++) { const o = 9 * t + 3 * q; col[o] = c[0]; col[o + 1] = c[1]; col[o + 2] = c[2]; } } geo.attributes.color.needsUpdate = true; }
   function panel() {
     const h = hot || pinned, el = $("region"), s = $("sug"); s.innerHTML = "";
     if (!h) { el.textContent = "Point at the body"; el.className = "none"; return; }
