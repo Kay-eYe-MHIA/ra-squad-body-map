@@ -27,10 +27,15 @@
   button.v:hover, button.v:focus-visible { border-color: var(--teal); background: #1b2530; }
   button.v .why { color: var(--soft); font-size: 12.5px; display: block; margin-top: 2px; }
   button.v .go { color: var(--teal); font-size: 13px; font-weight: 600; white-space: nowrap; }
-  #all { overflow: auto; flex: 1; min-height: 0; }
+  #all { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: #2a3442 transparent; }
+  #mentors { flex: none; }
   #all button.v { padding: 8px 12px; font-size: 14px; }
   .toggle { display: flex; gap: 8px; align-items: center; color: var(--soft); font-size: 13px; margin-top: 12px; }
   .toggle input { accent-color: var(--teal); width: 16px; height: 16px; }
+  .mentors { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; }
+  .mentors li { padding: 7px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; }
+  .mentors li:first-child { border-top: 0; }
+  .mentors span { color: var(--soft); font-size: 12.5px; white-space: nowrap; }
   .credit { position: fixed; left: 28px; bottom: 6px; color: #6f7b88; font-size: 11px; }
   .hint { bottom: 34px !important; }
   #tip { position: fixed; pointer-events: none; background: #0b0f14ee; border: 1px solid var(--teal); border-radius: 8px; padding: 8px 12px; font-size: 14px; display: none; max-width: 300px; }
@@ -62,6 +67,7 @@
     <div id="sug" class="list"></div>
   </div>
   <div class="card" id="all"><h2>All teaching videos</h2><div id="alllist" class="list" style="margin-top:10px"></div></div>
+  <div class="card" id="mentors"><h2>Supervisors and mentors</h2><ul class="mentors"><li>Dr Khairul Idzam <span>Hospital Ampang</span></li><li>Dr Sany <span>Hospital Ampang</span></li><li>Dr Raziman <span>Hospital Ampang</span></li></ul></div>
 </aside>
 <div class="credit">For teaching only, not a substitute for supervised training. Body model: MakeHuman base mesh (CC0). 3D engine: three.js (MIT).</div>
 <div id="tip"></div>
